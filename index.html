@@ -915,7 +915,12 @@ height: 100dvh !important;
 </div>    
 <div id="crewScreen" style="display:none; max-width:720px; margin:20px auto; border:1px solid #bfb6aa; padding:28px; background:white; text-align:center; border-radius:6px;">
 
-  <h3 style="text-align:center;"> ΚΑΤΑΧΩΡΗΣΗ ΣΤΟΙΧΕΙΩΝ ΠΛΗΡΩΜΑΤΟΣ</h3>
+    <h3 style="text-align:center;"> ΚΑΤΑΧΩΡΗΣΗ ΑΡΙΘΜΩΝ ΔΕΛΤΙΩΝ ΠΛΗΡΩΜΑΤΟΣ</h3>
+    <div style="max-width:630px; margin:10px auto 20px; padding:12px 16px; border:1px solid #b6ccd8; background:#edf7fc; color:#143a63; font-size:14px; line-height:1.55; text-align:left;">
+      Συμπληρώστε τους <strong>αριθμούς αθλητικών δελτίων</strong>. Δεν γίνεται εδώ έλεγχος ονόματος ή κατάστασης Active.
+      Μετά την υποβολή της Jotform, η γραμματεία θα ελέγξει τα δελτία μέσω της κεντρικής διαδικασίας ΕΙΟ.
+      Τα ονόματα και οι όμιλοι θα ενημερωθούν μόνο μετά τον έλεγχο.
+    </div>
 
   <div style="margin-bottom:20px;">
 <strong>ΚΥΒΕΡΝΗΤΗΣ</strong><br>
@@ -929,8 +934,8 @@ height: 100dvh !important;
 </div>
 <div style="text-align:center; margin:12px 0 14px 0;">
   <button class="btn" type="button" onclick="lookupPerson(document.getElementById('captainCardInput'))">
-    ΑΝΑΖΗΤΗΣΗ
-  </button>
+    ΚΑΤΑΧΩΡΗΣΗ ΑΡΙΘΜΟΥ
+   </button>
 </div>
 <div style="height:14px;"></div>
 
@@ -985,8 +990,8 @@ height: 100dvh !important;
       type="button"
       onclick="lookupPerson(document.getElementById('secondCaptainCardInput'))"
     >
-      ΑΝΑΖΗΤΗΣΗ
-    </button>
+       ΚΑΤΑΧΩΡΗΣΗ ΑΡΙΘΜΟΥ
+     </button>
   </div>
 
   <div class="personStatus" style="font-weight:bold; margin-bottom:6px;"></div>
@@ -1026,7 +1031,7 @@ height: 100dvh !important;
 </div>
 
   <div style="font-size:14px; margin:6px 0 10px 0;">
-    Μπορείτε είτε να βάλετε το/τα δελτία, στο πλαισιο που ακολουθεί, ένα-ένα, είτε να επικολλήσετε πολλούς αριθμούς μαζί και να πατήσετε <strong>ΑΝΑΖΗΤΗΣΗ ΟΛΩΝ</strong>.
+    Επικολλήστε τους αριθμούς δελτίων χωρισμένους με κενό, κόμμα ή νέα γραμμή και πατήστε <strong>ΚΑΤΑΧΩΡΗΣΗ ΟΛΩΝ</strong>. Η επαλήθευση ΕΙΟ θα γίνει μετά την υποβολή.
   </div>
 
 <textarea
@@ -1037,8 +1042,8 @@ height: 100dvh !important;
 
  <div style="text-align:center; margin:14px 0 10px 0;">
   <button class="btn" type="button" onclick="lookupBulkCrewCards()">
-    ΑΝΑΖΗΤΗΣΗ ΟΛΩΝ
-  </button>
+     ΚΑΤΑΧΩΡΗΣΗ ΟΛΩΝ
+   </button>
 </div>
 
   <div style="display:none; font-size:13px; color:#5f5147; margin-bottom:10px;">
@@ -1136,7 +1141,7 @@ const CONFIG = {
   SETTINGS_ENDPOINT: makeSettingsEndpoint(),
 
   OSR_RULE: "YES",
-  EIO_FLOW: "NO",
+  EIO_FLOW: "NO", // AUTO EIO: η ταυτοποίηση αθλητών γίνεται κεντρικά μετά τη Jotform.
 
   ORGANIZER_BANNER: "",
   ORGANIZER_NAME: "",
@@ -1150,11 +1155,9 @@ const CONFIG = {
   JOTFORM_BASE_URL: "https://form.jotform.com/262900632499362",
 
   BOAT_LOOKUP_URL:
-    "__BOAT_LOOKUP_URL__",
+    "https://script.google.com/macros/s/AKfycbyxD5HAKAd2MJm31a4YfVAmm1_DktUHYz0lgDSxRSQkaRfykDrMJq3u4wiHusZ2p9lQ/exec",
 
-  PERSON_LOOKUP_URL:
-    "https://script.google.com/macros/s/AKfycbw-zgZZeHRC6S5_f1xGkTwx-wXcFNq9z2O4cfhzAHSULQNDrwCp88vcvgU-617pgcg1/exec",
-
+  // AUTO EIO: Δεν καλείται δημόσιο person lookup πριν από τη συμμετοχή.
   EVENT_LOGO:
     "https://github.com/jsamartzis-png/logos/blob/main/logo_EntryFlow_removebg-preview.png?raw=true",
 
@@ -1513,7 +1516,7 @@ async function loadRaceSettingsFromSheet() {
 
 const settingsReadyPromise = loadRaceSettingsFromSheet();
 const BOAT_LOOKUP_URL = CONFIG.BOAT_LOOKUP_URL;
-const PERSON_LOOKUP_URL = CONFIG.PERSON_LOOKUP_URL;
+// Η αναζήτηση δελτίων εκτελείται κεντρικά μετά την υποβολή.
 const EVENT_LOGO = CONFIG.EVENT_LOGO;
 
 // Για δοκιμή το αφήνουμε ανοικτό.
@@ -1761,7 +1764,7 @@ function getCrewPdfRows() {
     const name = String(tr.querySelector(".name")?.innerText || "").trim();
     const club = String(tr.querySelector(".club")?.innerText || "").trim();
 
-    if (name && card) {
+    if (card) {
       rows.push({ name, card, club });
     }
   });
@@ -1875,16 +1878,15 @@ const captainState = getCaptainState();
 
 function getWosrName(value) {
   if (value === "captain") {
-    return captainState.name || "";
+    return captainState.name || (captainState.card ? "Αρ. δελτίου " + captainState.card + " — έλεγχος εκκρεμεί" : "");
   }
-
   if (value === "second_captain") {
     const secondCaptainState = getSecondCaptainState();
-    return secondCaptainState.name || "";
+    return secondCaptainState.name || (secondCaptainState.card ? "Αρ. δελτίου " + secondCaptainState.card + " — έλεγχος εκκρεμεί" : "");
   }
-
   const index = parseInt(value, 10) - 1;
-  return crewPdfRows[index]?.name || "";
+  const member = crewPdfRows[index];
+  return member?.name || (member?.card ? "Αρ. δελτίου " + member.card + " — έλεγχος εκκρεμεί" : "");
 }
 params.set(fieldNames.wosr_member_1, getWosrName(wosr1Value));
 params.set(fieldNames.wosr_member_2, getWosrName(wosr2Value));
@@ -2062,7 +2064,7 @@ const SEP = "  ";
     const club = shortClubName(tr.querySelector(".club")?.innerText);
     const card = cleanText(tr.querySelector("input")?.value);
 
-    if (name && card) {
+    if (card) {
       text += centerText(aa, AA_COL_WIDTH) + SEP;
       text += padRight(name, NAME_COL_WIDTH) + SEP;
       text += centerText(card, CARD_COL_WIDTH) + SEP;
@@ -2163,20 +2165,35 @@ if (acceptTerms && !acceptTerms.checked) {
 
       const captainState = getCaptainState();
 
-if (
-  !captainState.card.trim() ||
-  !captainState.name.trim() ||
-  captainState.name.trim() === "Δεν βρέθηκε"
-) {
-  alert("Παρακαλώ συμπληρώστε και αναζητήστε πρώτα έγκυρο αριθμό δελτίου κυβερνήτη.");
+if (!/^\d{3,12}$/.test(captainState.card.trim())) {
+  alert("Συμπληρώστε τον αριθμό δελτίου κυβερνήτη (3 έως 12 ψηφία). Ο έλεγχος ΕΙΟ θα γίνει μετά την υποβολή.");
   document.getElementById("captainCardInput")?.focus();
+  return;
+}
+const secondCaptainCard = document.getElementById("secondCaptainSection")?.style.display !== "none"
+  ? String(document.getElementById("secondCaptainCardInput")?.value || "").trim() : "";
+if (secondCaptainCard && !/^\d{3,12}$/.test(secondCaptainCard)) {
+  alert("Ο αριθμός δελτίου του δεύτερου κυβερνήτη πρέπει να έχει 3 έως 12 ψηφία.");
   return;
 }
       const crewRowsForCheck = getCrewPdfRows();
 
       if (crewRowsForCheck.length === 0) {
-       alert("Πρέπει να προστεθεί τουλάχιστον ένα μέλος πληρώματος.\n\nΒάλτε έναν ή περισσότερους αριθμούς στο πλαίσιο ΠΛΗΡΩΜΑ και πατήστε ΑΝΑΖΗΤΗΣΗ ΟΛΩΝ.");
-return;
+        alert("Προσθέστε τουλάχιστον ένα δελτίο πληρώματος, πατώντας ΚΑΤΑΧΩΡΗΣΗ ΟΛΩΝ.");
+        return;
+      }
+      if (crewRowsForCheck.some(row => !/^\d{3,12}$/.test(row.card))) {
+        alert("Ελέγξτε τους αριθμούς δελτίων πληρώματος (3 έως 12 ψηφία).");
+        return;
+      }
+      if (crewRowsForCheck.length > 10) {
+        alert("Μέγιστος αριθμός: 10 μέλη πληρώματος.");
+        return;
+      }
+      const allCards = [captainState.card.trim(), secondCaptainCard, ...crewRowsForCheck.map(row => row.card)].filter(Boolean);
+      if (new Set(allCards).size !== allCards.length) {
+        alert("Υπάρχει διπλός αριθμός δελτίου μεταξύ κυβερνητών και πληρώματος. Διορθώστε τον πριν συνεχίσετε.");
+        return;
       }
 const wosr1 = document.getElementById("wosrMember1")?.value || "";
 const wosr2 = document.getElementById("wosrMember2")?.value || "";
@@ -2215,8 +2232,7 @@ if (osrRequired) {
         alert(error.message || "Δεν ήταν δυνατό να ανοίξει η φόρμα συμμετοχής.");
         return;
       }
-      console.log("ΠΛΗΡΩΜΑ ΠΟΥ ΘΑ ΣΤΑΛΕΙ:", crewRowsForCheck);
-      console.log("JOTFORM PREFILL URL:", formUrl);
+      // Δεν καταγράφουμε τους αριθμούς δελτίων ούτε το URL προσυμπλήρωσης στην κονσόλα.
 //alert(buildCrewTextForPdf());
 
 const openJotformDirectly =
@@ -2298,8 +2314,9 @@ window.scrollTo({ top: 0, behavior: "auto" });
       const captainClub = document.querySelector("#crewScreen .club");
 
       if (captainInput) captainInput.value = state.captain?.card || "";
-      if (captainName) captainName.innerText = state.captain?.name || "";
-      if (captainClub) captainClub.innerText = state.captain?.club || "";
+      if (captainName) captainName.innerText = "";
+      if (captainClub) captainClub.innerText = "";
+      // Τα ονόματα παλαιότερων προσωρινών εγγραφών δεν θεωρούνται επαληθευμένα.
 
       document.getElementById("crewSection").style.display = "block";
       document.getElementById("crewList").innerHTML = "";
@@ -2581,132 +2598,65 @@ function hideSecondCaptain() {
     if (statusEl) statusEl.innerText = "";
   }
 }
-async function lookupPerson(input) {
-  const id = input.value.trim();
-  if (!id) return;
-
- const row = input.parentElement.parentElement;
-  const nameEl = row.querySelector(".name");
-  const clubEl = row.querySelector(".club");
-  const cardEl = row.querySelector(".cardNumber");
-  const statusEl = row.querySelector(".personStatus");
-
-  nameEl.innerText = "";
-  clubEl.innerText = "";
-  if (cardEl) cardEl.innerText = "";
-
-if (statusEl) {
-  statusEl.innerText = "Γίνεται αναζήτηση…";
-  statusEl.style.color = "#5f5147";
-}
-
-refreshWosrSelectors();
-
-  try {
-    const res = await fetch(PERSON_LOOKUP_URL + "?type=person&id=" + encodeURIComponent(id));
-    const json = await res.json();
-
-    if (!json.found) {
-      nameEl.innerText = "Δεν βρέθηκε";
-      clubEl.innerText = "";
-
-      if (statusEl) {
-        statusEl.innerText = "✖ Το δελτίο δεν βρέθηκε. Παρακαλούμε ελέγξτε τον αριθμό.";
-        statusEl.style.color = "#b00020";
-      }
-
-      return;
-    }
-
-    nameEl.innerText = json.data.name || "";
- clubEl.innerText = shortClubName(json.data.club || "");
-    if (cardEl) cardEl.innerText = input.value.trim();
-    
-const crewSectionEl = document.getElementById("crewSection");
-
-if (crewSectionEl && input.closest("#crewScreen")) {
-  crewSectionEl.style.display = "block";
-
-  // Το κουμπί για Jotform να εμφανίζεται ΜΟΝΟ όταν έχει βρεθεί μέλος πληρώματος,
-  // όχι απλώς όταν βρέθηκε ο κυβερνήτης.
-  if (input.closest("#crewTable")) {
-    document.getElementById("continueToJotformBtn").style.display = "inline-block";
-  }
-}
+// AUTO EIO: Το κουμπί καταχωρεί μόνο τον αριθμό. Καμία ζωντανή αναζήτηση προσώπου.
+function lookupPerson(input) {
+  const card = String(input?.value || "").trim();
+  const area = input?.closest("tr") || input?.closest("#secondCaptainSection") || input?.closest("#crewScreen");
+  const nameEl = area?.querySelector(".name");
+  const clubEl = area?.querySelector(".club");
+  const statusEl = area?.querySelector(".personStatus");
+  const cardEl = area?.querySelector(".cardNumber");
+  if (nameEl) nameEl.textContent = "";
+  if (clubEl) clubEl.textContent = "";
+  if (cardEl) cardEl.textContent = card;
+  if (!/^\d{3,12}$/.test(card)) {
     if (statusEl) {
-   statusEl.innerText = "✔ Βρέθηκε";
-statusEl.style.color = "#2e7d32";
-    }
-
-  } catch (err) {
-    console.error(err);
-
-    if (statusEl) {
-      statusEl.innerText = "✖ Σφάλμα επικοινωνίας. Παρακαλούμε δοκιμάστε ξανά.";
+      statusEl.textContent = "Συμπληρώστε αριθμό δελτίου 3–12 ψηφίων.";
       statusEl.style.color = "#b00020";
     }
+    return false;
   }
+  if (statusEl) {
+    statusEl.textContent = "✓ Αριθμός καταχωρήθηκε — έλεγχος ΕΙΟ μετά την υποβολή";
+    statusEl.style.color = "#1e5a82";
+  }
+  document.getElementById("crewSection").style.display = "block";
+  document.getElementById("addCrewButtonBox").style.display = "block";
+  refreshWosrSelectors();
+  const submitBtn = document.getElementById("continueToJotformBtn");
+  if (submitBtn) submitBtn.style.display = "inline-block";
+  return true;
 }
 
 async function lookupBulkCrewCards() {
   const textarea = document.getElementById("bulkCrewCards");
-  const text = textarea.value.trim();
-
-  if (!text) {
-    alert("Επικολλήστε πρώτα τους αριθμούς δελτίων.");
-    return;
+  const cards = String(textarea?.value || "").split(/[\s,;]+/).map(v => v.trim()).filter(Boolean);
+  if (!cards.length) { alert("Συμπληρώστε αριθμούς δελτίων πληρώματος."); return; }
+  if (cards.length > 10) { alert("Μπορείτε να βάλετε μέχρι 10 μέλη πληρώματος."); return; }
+  if (cards.some(card => !/^\d{3,12}$/.test(card))) {
+    alert("Οι αριθμοί δελτίων πρέπει να αποτελούνται από 3 έως 12 ψηφία."); return;
   }
-
-  const cards = text
-    .split(/[\s,;]+/)
-    .map(v => v.trim())
-    .filter(v => v);
-
-  if (cards.length === 0) {
-    alert("Δεν βρέθηκαν αριθμοί δελτίων.");
-    return;
+  const captain = String(document.getElementById("captainCardInput")?.value || "").trim();
+  const second = document.getElementById("secondCaptainSection")?.style.display !== "none"
+    ? String(document.getElementById("secondCaptainCardInput")?.value || "").trim() : "";
+  const all = [captain, second, ...cards].filter(Boolean);
+  if (new Set(all).size !== all.length) {
+    alert("Ένας αριθμός δελτίου εμφανίζεται περισσότερες από μία φορές."); return;
   }
-
-  if (cards.length > 10) {
-    alert("Μπορείτε να βάλετε μέχρι 10 μέλη πληρώματος.");
-    return;
-  }
-
   document.getElementById("crewList").innerHTML = "";
-  document.getElementById("continueToJotformBtn").style.display = "none";
-
-  for (const card of cards) {
+  cards.forEach(card => {
     addCrewMember();
-
     const rows = document.querySelectorAll("#crewTable tbody tr");
     const tr = rows[rows.length - 1];
-    const input = tr.querySelector("input");
-
-  input.value = card;
-
-await lookupPerson(input);
-
-const name = tr.querySelector(".name")?.innerText.trim() || "";
-const searchButton = tr.querySelector(".crewSearchBtn");
-
-if (name && name !== "Δεν βρέθηκε" && searchButton) {
-  searchButton.style.display = "none";
-}
-  }
-
+    tr.querySelector("input").value = card;
+    lookupPerson(tr.querySelector("input"));
+  });
   renumberCrewRows();
-
-  const foundRows = getCrewPdfRows();
-
-  if (foundRows.length > 0) {
-    document.getElementById("continueToJotformBtn").style.display = "inline-block";
-  }
-
-  if (foundRows.length < cards.length) {
-    alert("Η αναζήτηση ολοκληρώθηκε, αλλά κάποια δελτία δεν βρέθηκαν. Ελέγξτε τις γραμμές με μήνυμα σφάλματος.");
-  }
+  document.getElementById("continueToJotformBtn").style.display = "inline-block";
+  document.getElementById("addCrewButtonBox").style.display = "block";
+  if (textarea) textarea.value = cards.join("\n");
 }
-    
+
 function addCrewMember() {
   let table = document.getElementById("crewTable");
 
@@ -2745,7 +2695,7 @@ function addCrewMember() {
        class="crewSearchBtn memberSearchBtn"
         onclick="lookupPerson(this.closest('tr').querySelector('input'))"
         style="background:#f1f4ef; color:#2f241d; border:1px solid #bfb6aa; padding:6px 8px; font-weight:bold; cursor:pointer; font-size:12px; white-space:nowrap;">
-  🔍 ΑΝΑΖΗΤΗΣΗ ΜΕΛΟΥΣ
+  ✓ ΚΑΤΑΧΩΡΗΣΗ
 </button>
 
  <button type="button"
@@ -2762,23 +2712,14 @@ function addCrewMember() {
 
 function addCrewMemberSafe() {
   const rows = document.querySelectorAll("#crewTable tbody tr");
-
+  if (rows.length >= 10) { alert("Μέχρι 10 μέλη πληρώματος."); return; }
   for (const row of rows) {
-    const input = row.querySelector("input");
-    const card = input?.value.trim();
-    const name = row.querySelector(".name")?.innerText.trim();
-
-    if (card && !name) {
-      alert("Πατήστε πρώτα αναζήτηση 🔍");
-      return;
-    }
-
-    if (!card && !name) {
-      alert("Συμπληρώστε πρώτα το δελτίο στην υπάρχουσα γραμμή και πατήστε αναζήτηση 🔍");
+    const card = String(row.querySelector("input")?.value || "").trim();
+    if (!/^\d{3,12}$/.test(card)) {
+      alert("Συμπληρώστε σωστό αριθμό δελτίου στην υπάρχουσα γραμμή.");
       return;
     }
   }
-
   addCrewMember();
 }
 
@@ -2793,31 +2734,10 @@ function deleteCrewRow(btn) {
   renumberCrewRows();
 }
 function getSecondCaptainState() {
-  const cardInput =
-    document.getElementById("secondCaptainCardInput");
-
-  const searchButton =
-    document.querySelector(
-      'button[onclick*="secondCaptainCardInput"]'
-    );
-
-  const box =
-    searchButton?.parentElement?.parentElement ||
-    cardInput?.parentElement;
-
-  return {
-    name: String(
-      box?.querySelector(".name")?.textContent || ""
-    ).trim(),
-
-    card: String(
-      cardInput?.value || ""
-    ).trim(),
-
-    club: String(
-      box?.querySelector(".club")?.textContent || ""
-    ).trim()
-  };
+  const section = document.getElementById("secondCaptainSection");
+  const card = section?.style.display !== "none"
+    ? String(document.getElementById("secondCaptainCardInput")?.value || "").trim() : "";
+  return { card, name: "", club: "" };
 }
 function refreshWosrSelectors() {
   const select1 = document.getElementById("wosrMember1");
@@ -2859,8 +2779,8 @@ function refreshWosrSelectors() {
 const secondCaptain = getSecondCaptainState();
 
   if (
-    !captain.name &&
-    !secondCaptain.name &&
+    !captain.card &&
+    !secondCaptain.card &&
     rows.length === 0
   ) {
     box.style.display = "none";
@@ -2883,44 +2803,20 @@ const secondCaptain = getSecondCaptainState();
   }
 
   // Κυβερνήτης Α
-  if (captain.name && captain.card) {
-    addOptionToBoth(
-      "captain",
-      "ΚΥΒ Α - " +
-        captain.name +
-        " (" +
-        captain.card +
-        ")"
-    );
+  if (captain.card && /^\d{3,12}$/.test(captain.card)) {
+    addOptionToBoth("captain", "ΚΥΒ Α — δελτίο " + captain.card);
   }
 
   // Κυβερνήτης Β
-  if (secondCaptain.name) {
-    const secondCaptainLabel =
-      "ΚΥΒ Β - " +
-      secondCaptain.name +
-      (secondCaptain.card
-        ? " (" + secondCaptain.card + ")"
-        : "");
-
-    addOptionToBoth(
-      "second_captain",
-      secondCaptainLabel
-    );
+  if (secondCaptain.card && /^\d{3,12}$/.test(secondCaptain.card)) {
+    addOptionToBoth("second_captain", "ΚΥΒ Β — δελτίο " + secondCaptain.card);
   }
 
   // Υπόλοιπο πλήρωμα
   rows.forEach((row, index) => {
     const aa = index + 1;
 
-    const label =
-      aa +
-      " - " +
-      (row.name || "") +
-      " (" +
-      (row.card || "") +
-      ")";
-
+    const label = aa + " — δελτίο " + (row.card || "");
     addOptionToBoth(String(aa), label);
   });
 
@@ -2942,8 +2838,8 @@ function addCrewMemberFromData(member) {
   const tr = rows[rows.length - 1];
 
   tr.querySelector("input").value = member.card || "";
-  tr.querySelector(".name").innerText = member.name || "";
-  tr.querySelector(".club").innerText = member.club || "";
+  tr.querySelector(".name").innerText = "";
+  tr.querySelector(".club").innerText = "";
 }
 
 function loadCrewFromJson(crewJson) {
