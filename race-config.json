@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "mode": "race",
+  "raceTitle": "Πρότυπος αγώνας δοκιμής",
+  "raceDate": "31 Οκτωβρίου 2026",
+  "organizer": "REGATTAHYB SAM",
+  "organizerLogoUrl": "",
+  "organizerBannerUrl": "",
+  "settingsEndpoint": "https://script.google.com/macros/s/AKfycbwZHkHtIf_wc9cMTh51gOUidUjBQ1b2-1JjmlZbUPzlfO1GnYpJ76lRIP0x2Gak_G52/exec?action=settings&settings=1ZE8jPGRQAHU7mkpBOsHZ50dtYZdGeu6RLzGAm6VATD8",
+  "links": {
+    "entries": "",
+    "crews": "",
+    "results": "",
+    "notice": "",
+    "entryForm": "https://regattahub.github.io/protypos-agonas-dokimis-2026/",
+    "website": "https://regattahub.github.io/protypos-agonas-dokimis-2026/crew_change.html",
+    "photos": "https://drive.google.com/drive/folders/15y1gvpG4hsa-6y1JuM8zMUYh4IO2i3fx"
+  }
+}
