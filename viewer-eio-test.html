@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="el">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>RegattaHub | Viewer ΕΙΟ — Πρότυπος αγώνας δοκιμής</title>
+<style>
+:root{font-family:Arial,Helvetica,sans-serif;color:#1c3043;background:#f2f5f8;font-size:15px}
+*{box-sizing:border-box}body{margin:0;min-height:100vh}header{background:#0d2841;color:white;padding:28px max(18px,calc((100% - 1140px)/2));border-bottom:5px solid #0c8793}
+header small{color:#a2e0e4;letter-spacing:.11em;font-weight:bold}h1{font-size:1.65rem;line-height:1.3;margin:8px 0}header p{margin:0;color:#d5e2e9}
+main{max-width:1180px;margin:auto;padding:22px 20px 60px}h2{font-size:1.14rem;margin:0 0 12px}
+.panel,.boat{background:white;border:1px solid #dbe4eb;border-radius:12px;padding:18px;margin:0 0 16px;box-shadow:0 1px 5px #173b6010}
+.controls{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.controls input{min-width:280px;flex:1;border:1px solid #a5b3bf;border-radius:7px;padding:11px;font-size:15px}.controls button{border:0;border-radius:7px;padding:12px 16px;font-size:14px;font-weight:bold;cursor:pointer;background:#0a707c;color:white}.controls button.secondary{background:#e3ebf0;color:#203b50}
+.controls button:focus-visible,input:focus-visible{outline:3px solid #50afbf;outline-offset:2px}
+.help{font-size:.89rem;color:#52687a;line-height:1.5;margin:10px 0 0}.notice{padding:13px 15px;border-radius:7px;background:#eef5f8;border-left:4px solid #42778d;margin:12px 0 18px;line-height:1.5}
+.notice.warn{background:#fff6e5;border-left-color:#d6a02d}.notice.error{background:#fff0ed;border-left-color:#bc3b30}.notice.success{background:#edf8f1;border-left-color:#28844a}
+.legend{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0}.pill{font-weight:bold;display:inline-flex;align-items:center;gap:6px;border-radius:20px;padding:6px 12px;font-size:.83rem;white-space:nowrap}
+.active{background:#daf4e2;color:#146b31}.invalid{background:#ffe2de;color:#9d211a}.not-found{background:#e6ebfa;color:#384986}.pending{background:#fff0c5;color:#755500}
+.dot{width:10px;height:10px;border-radius:50%;background:currentColor;display:inline-block;flex:0 0 10px}
+.stats{display:flex;flex-wrap:wrap;gap:14px;margin:4px 0 16px}.stat{border:1px solid #dae5ea;border-radius:9px;padding:10px 16px;background:#fff;min-width:140px}.stat strong{font-size:1.4rem;display:block}.stat span{font-size:.83rem;color:#5a7081}
+.boat{overflow:hidden;padding:0}.boat-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;background:#eff5f7;padding:15px 18px}.boat-heading h3{margin:0;font-size:1.18rem}.boat-heading small{color:#506c81}
+.scroller{overflow-x:auto}table{width:100%;border-collapse:collapse;text-align:left}th{background:#f9fbfc;font-size:.83rem;color:#526679;font-weight:700;white-space:nowrap}th,td{padding:11px 12px;border-top:1px solid #ebeff3;vertical-align:middle}td.name{font-weight:600}td.club{min-width:200px}td:last-child{white-space:nowrap}
+.empty{padding:28px;text-align:center;color:#607689}footer{font-size:.85rem;color:#64798a;line-height:1.6;padding-top:8px}
+@media(max-width:600px){header{padding:22px 17px}main{padding:17px 12px 40px}.panel{padding:13px}.boat-heading{padding:13px}.controls input{min-width:0;width:100%}th,td{padding:9px 8px;font-size:.9rem}}
+</style>
+</head>
+<body>
+<header>
+<small>REGATTAHUB · ENTRYFLOW</small>
+<h1>Έλεγχος αθλητικών δελτίων — Viewer ΕΙΟ</h1>
+<p>Πρότυπος αγώνας δοκιμής · 31 Οκτωβρίου 2026</p>
+</header>
+<main>
+<section class="panel" aria-label="Σύνδεση ασφαλούς πηγής">
+  <h2>Σύνδεση αποτελεσμάτων</h2>
+  <div class="controls">
+    <input id="feedUrl" type="url" autocomplete="off" spellcheck="false" aria-label="URL Web App Viewer" placeholder="Επικόλλησε εδώ το URL /exec του Viewer Feed">
+    <button type="button" id="connect">Σύνδεση / Ανανέωση</button>
+    <button type="button" class="secondary" id="demo">Προεπισκόπηση χρωμάτων</button>
+  </div>
+  <p class="help">Χρησιμοποιούμε μόνο το URL της νέας, ειδικής υπηρεσίας Viewer. <strong>Ποτέ το μυστικό κλειδί της κεντρικής γέφυρας.</strong> Το URL αποθηκεύεται μόνο στον browser σου. Δεν απαιτείται να ξαναελεγχθούν τα δελτία στην ΕΙΟ.</p>
+</section>
+<section class="panel" aria-label="Ερμηνεία χρωμάτων">
+  <h2>Χρωματισμός καταστάσεων</h2>
+  <div class="legend">
+    <span class="pill active"><span class="dot"></span>Active — ενεργό</span>
+    <span class="pill invalid"><span class="dot"></span>No valid — μη έγκυρο</span>
+    <span class="pill not-found"><span class="dot"></span>No results — άγνωστο</span>
+    <span class="pill pending"><span class="dot"></span>Εκκρεμεί — ανεπιβεβαίωτο</span>
+  </div>
+</section>
+<div id="message" role="status" aria-live="polite" class="notice warn">Δεν έχει συνδεθεί ακόμη η ζωντανή πηγή. Πάτησε «Προεπισκόπηση χρωμάτων» για να ελέγξεις την εμφάνιση, χωρίς πραγματικά δεδομένα.</div>
+<div id="stats" class="stats" aria-label="Σύνοψη ελέγχων"></div>
+<div id="boats" aria-label="Πληρώματα"></div>
+<footer>Η κατάσταση κάθε δελτίου αφορά <strong>την τελευταία διαθέσιμη αναζήτηση ΕΙΟ</strong>, όχι εγγύηση μελλοντικής ισχύος. Ο Viewer δεν αλλάζει υποβολές και δεν αποστέλλει email. Δεν χρησιμοποιείται για διοικητική απόφαση χωρίς έλεγχο της ημερομηνίας και των στοιχείων.</footer>
+</main>
+<script>
+'use strict';
+const STORE_KEY='RH_VIEWER_PROTYPOS_FEED_URL_V1';
+const feedInput=document.getElementById('feedUrl');
+const msg=document.getElementById('message');
+const stats=document.getElementById('stats');
+const boatsEl=document.getElementById('boats');
+let pendingTimer=null;
+let currentScript=null;
+let lastLive=false;
+function showMessage(message,type){msg.textContent=message;msg.className='notice '+(type||'warn');}
+function make(tag,cls,content){const el=document.createElement(tag);if(cls)el.className=cls;if(content!==undefined)el.textContent=String(content);return el;}
+function label(state){return ({active:'Active',invalid:'No valid','not-found':'No results',pending:'Εκκρεμεί'})[state]||'Εκκρεμεί';}
+function stateClass(state){return ['active','invalid','not-found','pending'].includes(state)?state:'pending';}
+function pill(state){const el=make('span','pill '+stateClass(state));el.append(make('span','dot'));el.append(document.createTextNode(label(state)));return el;}
+function render(data,isDemo){
+  boatsEl.replaceChildren();stats.replaceChildren();
+  if(!data||data.ok!==true||!Array.isArray(data.boats))throw Error('Μη αναγνωρίσιμα δεδομένα Viewer.');
+  let active=0,issues=0,pending=0,total=0;
+  for(const boat of data.boats){for(const member of boat.crew||[]){total++;if(member.state==='active')active++;else if(member.state==='invalid'||member.state==='not-found')issues++;else pending++;}}
+  for(const [number,desc] of [[data.boats.length,'Σκάφη'],[total,'Δελτία'],[active,'Active'],[issues,'Χρειάζονται έλεγχο'],[pending,'Εκκρεμούν']]){
+    const box=make('div','stat');box.append(make('strong','',number),make('span','',desc));stats.append(box);
+  }
+  if(!data.boats.length){boatsEl.append(make('div','panel empty','Δεν βρέθηκαν συμμετοχές για τον Πρότυπο αγώνα.'));return;}
+  for(const boat of data.boats){
+    const section=make('section','boat');
+    const heading=make('div','boat-heading');
+    heading.append(make('h3','',boat.yacht||'Χωρίς όνομα'));
+    heading.append(make('small','', 'Αρ. πανιού: '+(boat.sail||'—')));
+    section.append(heading);
+    const wrap=make('div','scroller');const table=make('table');
+    const thead=make('thead');const hr=make('tr');
+    for(const title of ['Ρόλος','Δελτίο','Ονοματεπώνυμο','Όμιλος','Κατάσταση ΕΙΟ','Τελευταίος έλεγχος'])hr.append(make('th','',title));
+    thead.append(hr);table.append(thead);const tbody=make('tbody');
+    for(const member of boat.crew||[]){
+      const tr=make('tr');
+      for(const [value,cls] of [[member.role||'Αθλητής',''],[member.card||'—',''],[member.name||'—','name'],[member.club||'—','club']])tr.append(make('td',cls,value));
+      const statusTd=make('td');statusTd.append(pill(member.state));tr.append(statusTd);
+      tr.append(make('td','',member.checkedAt||'—'));tbody.append(tr);
+    }
+    table.append(tbody);wrap.append(table);section.append(wrap);boatsEl.append(section);
+  }
+  if(isDemo)showMessage('ΠΡΟΕΠΙΣΚΟΠΗΣΗ: Τα παρακάτω είναι φανταστικά δεδομένα μόνο για έλεγχο χρωμάτων — όχι αποτελέσματα ΕΙΟ.','warn');
+  else showMessage('Ενημέρωση από κεντρική ουρά: '+(data.generatedAt?new Date(data.generatedAt).toLocaleString('el-GR'):'ολοκληρώθηκε')+'. Δεν έγινε νέος έλεγχος ΕΙΟ.','success');
+}
+function validateFeed(value){
+  const u=new URL(String(value||'').trim());
+  if(u.protocol!=='https:'||u.hostname!=='script.google.com'||!/^\/macros\/s\/[a-zA-Z0-9_-]+\/exec\/?$/.test(u.pathname))throw Error('Χρειάζεται το URL /exec ενός Google Apps Script Web App.');
+  return u.origin+u.pathname.replace(/\/$/,'');
+}
+function disconnectPending(){if(pendingTimer){clearTimeout(pendingTimer);pendingTimer=null;}if(currentScript){currentScript.remove();currentScript=null;}}
+function load(){
+  let base;
+  try{base=validateFeed(feedInput.value);}catch(err){showMessage(err.message,'error');return;}
+  localStorage.setItem(STORE_KEY,base);lastLive=true;
+  disconnectPending();showMessage('Ανάγνωση επαληθευμένων αποτελεσμάτων από την κεντρική ουρά…','warn');
+  window.RH_V26_receive=function(response){
+    disconnectPending();
+    if(!response||response.ok!==true){showMessage('Η υπηρεσία Viewer δεν επέστρεψε δεδομένα: '+String(response?.error||'άγνωστο σφάλμα'),'error');return;}
+    if(response.race!=='PROTYPOS_TEST_2026'){showMessage('Απορρίφθηκαν αποτελέσματα διαφορετικού αγώνα.','error');return;}
+    try{render(response,false);}catch(e){showMessage(e.message,'error');}
+  };
+  const url=base+'?action=viewer&callback=RH_V26_receive&_='+Date.now();
+  const script=document.createElement('script');currentScript=script;script.async=true;script.src=url;
+  script.onerror=()=>{disconnectPending();showMessage('Δεν ήταν δυνατή η σύνδεση. Έλεγξε το URL, την άδεια δημοσίευσης και το deployment.','error');};
+  pendingTimer=setTimeout(()=>{disconnectPending();showMessage('Η σύνδεση καθυστέρησε. Έλεγξε ότι η υπηρεσία Viewer είναι δημοσιευμένη και ενεργή.','error');},20000);
+  document.head.append(script);
+}
+function demo(){lastLive=false;disconnectPending();render({ok:true,race:'PROTYPOS_TEST_2026',boats:[{yacht:'ΔΟΚΙΜΑΣΤΙΚΟ ΣΚΑΦΟΣ',sail:'TEST',crew:[
+  {role:'Κυβερνήτης',card:'1001',name:'ΔΟΚΙΜΑΣΤΙΚΟ ΟΝΟΜΑ',club:'ΔΟΚΙΜΑΣΤΙΚΟΣ ΟΜΙΛΟΣ',state:'active',checkedAt:'—'},
+  {role:'Πλήρωμα',card:'1002',name:'ΠΑΡΑΔΕΙΓΜΑ',club:'ΔΟΚΙΜΑΣΤΙΚΟΣ ΟΜΙΛΟΣ',state:'invalid',checkedAt:'—'},
+  {role:'Πλήρωμα',card:'1003',name:'',club:'',state:'not-found',checkedAt:'—'},
+  {role:'Πλήρωμα',card:'1004',name:'',club:'',state:'pending',checkedAt:'—'}
+]}]},true);}
+document.getElementById('connect').addEventListener('click',load);
+document.getElementById('demo').addEventListener('click',demo);
+const saved=localStorage.getItem(STORE_KEY);if(saved){feedInput.value=saved;load();}
+setInterval(()=>{if(lastLive&&feedInput.value)load();},5*60*1000);
+</script>
+</body>
+</html>
