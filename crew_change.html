@@ -2311,130 +2311,59 @@ function normalizeCrewList(list) {
 
 
 function parseCrewText(rawValue) {
-  if (!rawValue) {
-    return [];
+  if (!rawValue) return [];
+  if (Array.isArray(rawValue)) return normalizeCrewList(rawValue);
+  if (typeof rawValue === "object") {
+    return normalizeCrewList(Array.isArray(rawValue.members) ? rawValue.members : []);
   }
 
-  /*
-   * Αν τα δεδομένα έχουν ήδη επιστραφεί
-   * ως κανονικός πίνακας.
-   */
-  if (Array.isArray(rawValue)) {
-    return normalizeCrewList(rawValue);
-  }
+  const text = String(rawValue).replace(/\r/g, "").trim();
+  if (!text) return [];
 
-  const text = String(rawValue)
-    .replace(/\r/g, "")
-    .trim();
-
-  if (!text) {
-    return [];
-  }
-
-  /*
-   * Πρώτα δοκιμάζουμε μήπως το περιεχόμενο
-   * είναι αποθηκευμένο ως JSON.
-   */
   try {
     const parsed = JSON.parse(text);
-
-    if (Array.isArray(parsed)) {
-      return normalizeCrewList(parsed);
-    }
-  } catch (error) {
-    /*
-     * Δεν είναι JSON.
-     * Συνεχίζουμε με ανάγνωση του πίνακα
-     * της "Προεπισκόπησης Πληρώματος".
-     */
-  }
+    if (Array.isArray(parsed)) return normalizeCrewList(parsed);
+    if (parsed && Array.isArray(parsed.members)) return normalizeCrewList(parsed.members);
+  } catch (_) { /* Διαβάζουμε την προεπισκόπηση του Jotform ως κείμενο. */ }
 
   const crew = [];
+  for (const rawLine of text.split("\n")) {
+    const line = rawLine.trim();
+    if (!line || /^Α\/Α(?:\s|$)/iu.test(line) || /^[\s─—\-_=]+$/u.test(line)) continue;
 
-  const lines = text
-    .split("\n")
-    .map(line => line.trim())
-    .filter(line => {
-      if (!line) {
-        return false;
-      }
-
-      /*
-       * Αγνοούμε την επικεφαλίδα.
-       */
-      if (/^Α\/Α(?:\s|$)/i.test(line)) {
-        return false;
-      }
-
-      /*
-       * Αγνοούμε τη διαχωριστική γραμμή.
-       */
-      if (/^[\s─—\-_=]+$/u.test(line)) {
-        return false;
-      }
-
-      return true;
-    });
-
-  lines.forEach(line => {
-    /*
-     * Αναμενόμενη μορφή:
-     *
-     * 1   ΟΝΟΜΑΤΕΠΩΝΥΜΟ   43167   ΟΜΙΛΟΣ
-     */
-    const match = line.match(
-      /^\s*\d+\s+(.+?)\s+(\d+)\s+(.+?)\s*$/u
-    );
-
-    if (!match) {
-      return;
+    // Υποβολές μέσω ΕΙΟ: ο πίνακας μπορεί να περιέχει ΜΟΝΟ αριθμό δελτίου.
+    // Π.χ. " 1                                         19012"
+    const withoutIndex = line.replace(/^\d{1,3}\s{2,}/u, "").trim();
+    if (/^\d{3,12}$/.test(withoutIndex)) {
+      crew.push({ name: "", card: withoutIndex, club: "" });
+      continue;
     }
 
-    crew.push({
-      name: match[1].trim(),
-      card: match[2].trim(),
-      club: match[3].trim()
-    });
-  });
-
-  return crew;
+    // Επίσης δεχόμαστε τη μορφή "1 ΟΝΟΜΑΤΕΠΩΝΥΜΟ 19012 ΟΜΙΛΟΣ"
+    // και ονόματα χωρίς όμιλο.
+    const withIndex = line.match(/^\d{1,3}\s+(.+?)\s+(\d{3,12})(?:\s+(.+))?$/u);
+    const named = withIndex || withoutIndex.match(/^(.+?)\s+(\d{3,12})(?:\s+(.+))?$/u);
+    if (named) {
+      crew.push({ name: named[1].trim(), card: named[2], club: (named[3] || "").trim() });
+    }
+  }
+  return normalizeCrewList(crew);
 }
 
-
 function getCrewMembers(data) {
-  /*
-   * Πρώτη επιλογή:
-   * έτοιμος πίνακας crew_members.
-   */
-  const directMembers = normalizeCrewList(
-    data.crew_members
-  );
+  // Μόνο ανάγνωση από το υφιστάμενο Boat Lookup: καμία νέα μεταφορά.
+  const direct = normalizeCrewList(data.crew_members || data.crewMembers || []);
+  if (direct.length) return direct;
 
-  if (directMembers.length) {
-    return directMembers;
-  }
-
-  /*
-   * Έπειτα δοκιμάζουμε, με αυτή τη σειρά:
-   *
-   * 1. Πλήρωμα μετά από προηγούμενη αλλαγή.
-   * 2. Πλήρωμα πριν από αλλαγή.
-   * 3. Προεπισκόπηση Πληρώματος από τη στήλη L.
-   */
   const sources = [
-    data.crew_json_after,
-    data.crew_json_before,
-    data.crew_text
+    data.crew_json_after, data.crew_json_before, data.crew_json,
+    data.crew_text, data.crewText, data.crew_preview, data.crewPreview,
+    data["Προεπισκόπηση Πληρώματος"]
   ];
-
   for (const source of sources) {
     const members = parseCrewText(source);
-
-    if (members.length) {
-      return members;
-    }
+    if (members.length) return members;
   }
-
   return [];
 }
 
@@ -3698,7 +3627,6 @@ function refreshWosrSelectors() {
 </script>
 </body>
 </html>
-
 
 
 
