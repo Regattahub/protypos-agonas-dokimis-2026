@@ -2400,7 +2400,7 @@ const crewMembers = getCrewMembers(data);
 
   const crewRowsHtml = crewMembers.length
     ? crewMembers.map((m, index) => `
-        <tr>
+        <tr data-crew-card="${esc(m.card)}">
           <td style="border:1px solid #bfb6aa; padding:7px; text-align:center;">${index + 1}</td>
           <td style="border:1px solid #bfb6aa; padding:7px;">${esc(m.name)}</td>
           <td style="border:1px solid #bfb6aa; padding:7px; text-align:center;">${esc(m.card)}</td>
@@ -2449,7 +2449,7 @@ const removeRowsHtml = removableParticipants.length
           data-club="${esc(m.club)}"
           style="width:20px; height:20px; margin-right:8px; vertical-align:middle;"
         >
-        ${index + 1}. ${esc(m.name)} — ${esc(m.label)} — ${esc(m.card)} — ${esc(m.club)}
+        ${index + 1}. <span class="existingCrewCaption">${esc(m.name)} — ${esc(m.label)} — ${esc(m.card)} — ${esc(m.club)}</span>
       </label>
     `).join("")
   : `
@@ -2549,7 +2549,7 @@ ${data.second_captain_name ? `
             <th style="border:1px solid #bfb6aa; padding:7px;">ΟΜΙΛΟΣ</th>
           </tr>
         </thead>
-        <tbody>
+        <tbody id="regattaExistingCrewRows">
           ${crewRowsHtml}
         </tbody>
       </table>
@@ -2689,6 +2689,52 @@ ${data.second_captain_name ? `
   </button>
 </div>
   `;
+
+  // TEST: συμπλήρωση ελλειπόντων στοιχείων από την ΥΠΑΡΧΟΥΣΑ υπηρεσία PERSON_LOOKUP.
+  // Δεν αλλάζει καταχωρίσεις Jotform, Sheets ή EIO. Δεν επινοεί ονόματα/κατάσταση.
+  async function enrichInitialCrewFromExistingLookup() {
+    const missing = crewMembers.filter(m => m.card && (!m.name || !m.club));
+    if (!missing.length) return;
+    for (const member of missing) {
+      try {
+        const url = PERSON_LOOKUP_URL + "?type=person&id=" + encodeURIComponent(member.card);
+        const controller = new AbortController();
+        const timer = setTimeout(() => controller.abort(), 7000);
+        let response;
+        try { response = await fetch(url, {signal:controller.signal}); }
+        finally { clearTimeout(timer); }
+        if (!response.ok) continue;
+        const result = await response.json();
+        if (!result || !result.found || !result.data) continue;
+        const found = result.data;
+        // Μόνο εμπλουτισμός σταθερά ταυτοποιημένου δελτίου, χωρίς αλλαγή αριθμού.
+        if (!member.name) member.name = String(found.name || found.full_name || "").trim();
+        if (!member.club) member.club = String(found.club || "").trim();
+      } catch (error) {
+        console.warn("Δεν διατέθηκαν πρόσθετα στοιχεία δελτίου", member.card, error);
+      }
+    }
+    // Ενημέρωση ΟΛΩΝ των ορατών πεδίων και των στοιχείων αφαίρεσης.
+    const tbody = crewScreen.querySelector("#regattaExistingCrewRows");
+    if (tbody) {
+      tbody.querySelectorAll("tr[data-crew-card]").forEach(tr => {
+        const m = crewMembers.find(x => x.card === tr.dataset.crewCard);
+        if (!m) return;
+        tr.cells[1].textContent = m.name || "—";
+        tr.cells[3].textContent = m.club || "—";
+      });
+    }
+    crewScreen.querySelectorAll(".removeCrewCheck[data-role='crew']").forEach(chk => {
+      const m = crewMembers.find(x => x.card === chk.dataset.card);
+      if (!m) return;
+      chk.dataset.name = m.name || "";
+      chk.dataset.club = m.club || "";
+      const caption = chk.closest("label")?.querySelector(".existingCrewCaption");
+      if (caption) caption.textContent = `${m.name || "(Δεν βρέθηκε όνομα)"} — Μέλος πληρώματος — ${m.card} — ${m.club || ""}`;
+    });
+    refreshWosrSelectors();
+  }
+  enrichInitialCrewFromExistingLookup();
 
   // Οι τρεις κύριες ενέργειες είναι μία ομάδα επιλογών.
   document.querySelectorAll('input[name="crewAction"]').forEach((radio) => {
